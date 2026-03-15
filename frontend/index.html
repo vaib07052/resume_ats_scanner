@@ -11,14 +11,12 @@
 </head>
 <body>
 
-  <!-- Background decoration -->
   <div class="bg-grid"></div>
   <div class="bg-blob blob-1"></div>
   <div class="bg-blob blob-2"></div>
 
   <div class="app-wrapper">
 
-    <!-- Header -->
     <header class="site-header">
       <div class="logo">
         <span class="logo-icon">⬡</span>
@@ -27,14 +25,12 @@
       <p class="tagline">Know your resume's fighting chance — before the recruiter does.</p>
     </header>
 
-    <!-- Main content -->
     <main class="main-grid">
 
-      <!-- Left column: Upload -->
       <section class="card card--upload" id="upload-section">
         <div class="card-label">STEP 01</div>
         <h2 class="card-title">Upload Resume</h2>
-        <p class="card-desc">Drop your PDF or DOCX file below. We'll extract the text automatically.</p>
+        <p class="card-desc">Drop your PDF or DOCX file below.</p>
 
         <div class="drop-zone" id="drop-zone">
           <div class="drop-icon">
@@ -45,7 +41,7 @@
           </div>
           <p class="drop-label">Drag &amp; drop your resume here</p>
           <p class="drop-sub">or</p>
-          <label class="btn btn--outline" for="resume-file">Browse File</label>
+          <button id="browse-btn" class="btn btn--outline" type="button">Browse File</button>
           <input type="file" id="resume-file" accept=".pdf,.docx" hidden />
           <p class="drop-formats">Supported: PDF, DOCX · Max 5MB</p>
         </div>
@@ -53,7 +49,7 @@
         <div class="file-preview hidden" id="file-preview">
           <span class="file-icon">📄</span>
           <span class="file-name" id="file-name-display"></span>
-          <button class="remove-file" id="remove-file" title="Remove file">✕</button>
+          <button class="remove-file" id="remove-file" type="button" title="Remove file">✕</button>
         </div>
 
         <div class="upload-status hidden" id="upload-status">
@@ -69,26 +65,24 @@
         </div>
       </section>
 
-      <!-- Right column: Job Description -->
       <section class="card card--jd" id="jd-section">
         <div class="card-label">STEP 02</div>
         <h2 class="card-title">Paste Job Description</h2>
-        <p class="card-desc">Copy the full job posting and paste it here for the best results.</p>
+        <p class="card-desc">Copy the full job posting and paste it here.</p>
 
         <div class="textarea-wrapper">
           <textarea
             id="job-description"
             class="jd-textarea"
-            placeholder="Paste the job description here…&#10;&#10;e.g. We are looking for a Senior Python Developer with experience in Flask, REST APIs, MySQL, and cloud platforms…"
+            placeholder="Paste the job description here…"
             rows="12"
           ></textarea>
           <div class="char-counter"><span id="char-count">0</span> characters</div>
         </div>
       </section>
 
-      <!-- CTA row -->
       <div class="cta-row">
-        <button class="btn btn--primary btn--large" id="analyze-btn" disabled>
+        <button class="btn btn--primary btn--large" id="analyze-btn" disabled type="button">
           <span class="btn-text">Analyze My Resume</span>
           <span class="btn-arrow">→</span>
         </button>
@@ -97,19 +91,230 @@
 
     </main>
 
-    <!-- Error toast -->
     <div class="toast toast--error hidden" id="error-toast">
       <span class="toast-icon">⚠</span>
       <span class="toast-msg" id="toast-msg">Something went wrong.</span>
-      <button class="toast-close" id="toast-close">✕</button>
+      <button class="toast-close" id="toast-close" type="button">✕</button>
     </div>
 
     <footer class="site-footer">
-      <p>Built with Flask + Vanilla JS · No data stored beyond your session</p>
+      <p>Built with Flask + Vanilla JS</p>
     </footer>
   </div>
 
-  <script src="js/upload.js"></script>
-  <script src="js/ats_score.js"></script>
+  <script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    const fileInput       = document.getElementById("resume-file");
+    const browseBtn       = document.getElementById("browse-btn");
+    const dropZone        = document.getElementById("drop-zone");
+    const filePreview     = document.getElementById("file-preview");
+    const fileNameDisplay = document.getElementById("file-name-display");
+    const removeFileBtn   = document.getElementById("remove-file");
+    const uploadStatus    = document.getElementById("upload-status");
+    const statusFill      = document.getElementById("status-fill");
+    const statusText      = document.getElementById("status-text");
+    const uploadSuccess   = document.getElementById("upload-success");
+    const resumeIdTag     = document.getElementById("resume-id-tag");
+    const analyzeBtn      = document.getElementById("analyze-btn");
+    const ctaHint         = document.getElementById("cta-hint");
+    const jdTextarea      = document.getElementById("job-description");
+    const charCount       = document.getElementById("char-count");
+
+    let currentResumeId = null;
+    let jdReady = false;
+
+    // Browse button — only this opens file picker
+    browseBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fileInput.click();
+    });
+
+    // File selected
+    fileInput.addEventListener("change", function() {
+      if (fileInput.files && fileInput.files.length > 0) {
+        handleFile(fileInput.files[0]);
+      }
+    });
+
+    // Drag over
+    dropZone.addEventListener("dragover", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add("drag-over");
+    });
+
+    // Drag leave
+    dropZone.addEventListener("dragleave", function(e) {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+    });
+
+    // Drop
+    dropZone.addEventListener("drop", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove("drag-over");
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    // Remove file
+    removeFileBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      resetUpload();
+    });
+
+    // JD textarea
+    jdTextarea.addEventListener("input", function() {
+      charCount.textContent = jdTextarea.value.length;
+      jdReady = jdTextarea.value.trim().length >= 30;
+      updateAnalyzeButton();
+    });
+
+    // Analyze button
+    analyzeBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      runAnalysis();
+    });
+
+    function handleFile(file) {
+      console.log("File received:", file.name, file.size);
+
+      if (!/\.(pdf|docx)$/i.test(file.name)) {
+        showToast("Only PDF and DOCX files are supported.");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("File too large. Max 5MB.");
+        return;
+      }
+
+      fileNameDisplay.textContent = file.name;
+      show(filePreview);
+      hide(uploadSuccess);
+      hide(uploadStatus);
+      uploadResume(file);
+    }
+
+    async function uploadResume(file) {
+      console.log("Starting upload...");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      show(uploadStatus);
+      setBar(30);
+      statusText.textContent = "Uploading…";
+
+      try {
+        setBar(60);
+        console.log("Sending to Flask...");
+
+        const res = await fetch(API_BASE + "/upload-resume", {
+          method: "POST",
+          body: formData
+        });
+
+        setBar(90);
+        console.log("Response status:", res.status);
+
+        const data = await res.json();
+        console.log("Response data:", JSON.stringify(data));
+
+        if (!res.ok) {
+          throw new Error(data.error || "Upload failed.");
+        }
+
+        setBar(100);
+        statusText.textContent = "Done!";
+        currentResumeId = data.resume_id;
+        console.log("Resume ID:", currentResumeId);
+
+        setTimeout(function() {
+          hide(uploadStatus);
+          show(uploadSuccess);
+          resumeIdTag.textContent = "Resume ID: " + currentResumeId;
+          updateAnalyzeButton();
+          console.log("UI updated, analyze button disabled:", analyzeBtn.disabled);
+        }, 500);
+
+      } catch (err) {
+        console.error("Upload error:", err.message);
+        hide(uploadStatus);
+        showToast("Error: " + err.message);
+        resetUpload();
+      }
+    }
+
+    async function runAnalysis() {
+      const jdText = jdTextarea.value.trim();
+      if (!currentResumeId) { showToast("Upload a resume first."); return; }
+      if (!jdText) { showToast("Paste a job description first."); return; }
+
+      analyzeBtn.disabled = true;
+      analyzeBtn.querySelector(".btn-text").textContent = "Analyzing…";
+
+      try {
+        const res = await fetch(API_BASE + "/calculate-ats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            resume_id: currentResumeId,
+            job_description: jdText
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Analysis failed.");
+        window.location.href = "result.html?id=" + data.result_id;
+
+      } catch (err) {
+        analyzeBtn.disabled = false;
+        analyzeBtn.querySelector(".btn-text").textContent = "Analyze My Resume";
+        showToast("Error: " + err.message);
+      }
+    }
+
+    function setBar(pct) { statusFill.style.width = pct + "%"; }
+    function show(el) { el.classList.remove("hidden"); }
+    function hide(el) { el.classList.add("hidden"); }
+
+    function resetUpload() {
+      currentResumeId = null;
+      fileInput.value = "";
+      hide(filePreview);
+      hide(uploadStatus);
+      hide(uploadSuccess);
+      setBar(0);
+      updateAnalyzeButton();
+    }
+
+    function updateAnalyzeButton() {
+      const ready = !!(currentResumeId && jdReady);
+      analyzeBtn.disabled = !ready;
+      if (ready) {
+        ctaHint.textContent = "You're all set — click to analyze!";
+      } else if (!currentResumeId) {
+        ctaHint.textContent = "Upload a resume to continue.";
+      } else {
+        ctaHint.textContent = "Paste a job description to continue.";
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("error-toast");
+      document.getElementById("toast-msg").textContent = msg;
+      toast.classList.remove("hidden");
+      document.getElementById("toast-close").onclick = function() {
+        toast.classList.add("hidden");
+      };
+      setTimeout(function() { toast.classList.add("hidden"); }, 6000);
+    }
+  </script>
+
 </body>
 </html>

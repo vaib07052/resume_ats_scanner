@@ -2,36 +2,31 @@
  * ats_score.js
  * Loaded on BOTH index.html and result.html.
  *
- * On index.html  → watches the JD textarea, fires the /calculate-ats
- *                  API call, then redirects to result.html with ?id=...
+ * On index.html  → watches the JD textarea, fires /calculate-ats,
+ *                  then redirects to result.html?id=...
  *
- * On result.html → reads ?id from the URL, calls GET /result/<id>,
+ * On result.html → reads ?id from URL, calls GET /result/<id>,
  *                  and renders the full score breakdown.
  */
-
-const API_BASE = "http://localhost:5000";
 
 /* ═══════════════════════════════════════════════════════════
    INDEX PAGE LOGIC
    ═══════════════════════════════════════════════════════════ */
 
-const jdTextarea  = document.getElementById("job-description");
-const analyzeBtn  = document.getElementById("analyze-btn");
-const charCount   = document.getElementById("char-count");
+const jdTextarea = document.getElementById("job-description");
+const charCount  = document.getElementById("char-count");
+const analyzeBtnScore = document.getElementById("analyze-btn");
 
 if (jdTextarea) {
-  // Character counter + JD ready state
   jdTextarea.addEventListener("input", () => {
     const len = jdTextarea.value.trim().length;
     if (charCount) charCount.textContent = jdTextarea.value.length;
-
-    // Notify upload.js of JD readiness
     if (window.setJdReady) window.setJdReady(len >= 30);
   });
 }
 
-if (analyzeBtn) {
-  analyzeBtn.addEventListener("click", runAnalysis);
+if (analyzeBtnScore) {
+  analyzeBtnScore.addEventListener("click", runAnalysis);
 }
 
 async function runAnalysis() {
@@ -45,27 +40,24 @@ async function runAnalysis() {
     return;
   }
 
-  // Loading state
-  analyzeBtn.disabled = true;
-  analyzeBtn.querySelector(".btn-text").textContent = "Analyzing…";
+  analyzeBtnScore.disabled = true;
+  analyzeBtnScore.querySelector(".btn-text").textContent = "Analyzing…";
 
   try {
-    const response = await fetch(`${API_BASE}/calculate-ats`, {
+    const response = await fetch(`http://localhost:5000/calculate-ats`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resume_id: resumeId, job_description: jdText }),
     });
 
     const data = await response.json();
-
     if (!response.ok) throw new Error(data.error || "Analysis failed.");
 
-    // Redirect to result page
     window.location.href = `result.html?id=${data.result_id}`;
 
   } catch (err) {
-    analyzeBtn.disabled = false;
-    analyzeBtn.querySelector(".btn-text").textContent = "Analyze My Resume";
+    analyzeBtnScore.disabled = false;
+    analyzeBtnScore.querySelector(".btn-text").textContent = "Analyze My Resume";
     showIndexToast(err.message || "Could not connect to the server.");
   }
 }
@@ -75,10 +67,8 @@ function showIndexToast(msg) {
   const toastMsg = document.getElementById("toast-msg");
   const closeBtn = document.getElementById("toast-close");
   if (!toast) return;
-
   toastMsg.textContent = msg;
   toast.classList.remove("hidden");
-
   const dismiss = () => toast.classList.add("hidden");
   if (closeBtn) closeBtn.onclick = dismiss;
   setTimeout(dismiss, 5000);
@@ -94,7 +84,6 @@ const resultError    = document.getElementById("result-error");
 const resultErrorMsg = document.getElementById("result-error-msg");
 
 if (resultsWrapper) {
-  // We are on result.html
   loadResult();
 }
 
@@ -108,13 +97,10 @@ async function loadResult() {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/result/${resultId}`);
+    const response = await fetch(`http://localhost:5000/result/${resultId}`);
     const data     = await response.json();
-
     if (!response.ok) throw new Error(data.error || "Failed to load result.");
-
     renderResult(data);
-
   } catch (err) {
     showResultError(err.message || "Could not connect to the server.");
   }
@@ -125,38 +111,30 @@ function renderResult(data) {
   const matched = data.matched_keywords || [];
   const missing = data.missing_keywords || [];
 
-  // ── Score ring ───────────────────────────────────────────
-  const ringFill   = document.getElementById("ring-fill");
-  const scoreNum   = document.getElementById("score-number");
-  const headline   = document.getElementById("score-headline");
-  const scoreSub   = document.getElementById("score-sub");
+  const ringFill = document.getElementById("ring-fill");
+  const scoreNum = document.getElementById("score-number");
+  const headline = document.getElementById("score-headline");
+  const scoreSub = document.getElementById("score-sub");
 
-  const circumference = 2 * Math.PI * 80; // 502.65
+  const circumference = 2 * Math.PI * 80;
   const offset = circumference - (score / 100) * circumference;
 
-  // Animate number counter
   animateCount(scoreNum, 0, score, 1200);
 
-  // Animate ring (slight delay for drama)
   setTimeout(() => {
     ringFill.style.strokeDashoffset = offset;
-
-    // Colour the ring by score tier
     if (score >= 75)      ringFill.style.stroke = "var(--accent)";
     else if (score >= 50) ringFill.style.stroke = "var(--warn)";
     else                  ringFill.style.stroke = "var(--danger)";
   }, 100);
 
-  // Headline and sub text
   const { label, sub } = getScoreTier(score);
   headline.textContent = label;
   scoreSub.textContent = sub;
 
-  // ── Pill counters ────────────────────────────────────────
   document.getElementById("matched-count").textContent = matched.length;
   document.getElementById("missing-count").textContent = missing.length;
 
-  // ── Keyword lists ────────────────────────────────────────
   const matchedList = document.getElementById("matched-list");
   const missingList = document.getElementById("missing-list");
   document.getElementById("matched-total").textContent =
@@ -164,15 +142,8 @@ function renderResult(data) {
   document.getElementById("missing-total").textContent =
     `${missing.length} keyword${missing.length !== 1 ? "s" : ""}`;
 
-  matched.forEach((kw, i) => {
-    const tag = makeTag(kw, "kw-tag--matched", i * 30);
-    matchedList.appendChild(tag);
-  });
-
-  missing.forEach((kw, i) => {
-    const tag = makeTag(kw, "kw-tag--missing", i * 30);
-    missingList.appendChild(tag);
-  });
+  matched.forEach((kw, i) => matchedList.appendChild(makeTag(kw, "kw-tag--matched", i * 30)));
+  missing.forEach((kw, i) => missingList.appendChild(makeTag(kw, "kw-tag--missing", i * 30)));
 
   if (matched.length === 0) {
     matchedList.innerHTML = `<p style="color:var(--text-muted);font-size:.83rem;">No matched keywords found.</p>`;
@@ -181,14 +152,13 @@ function renderResult(data) {
     missingList.innerHTML = `<p style="color:var(--text-muted);font-size:.83rem;">Great — no missing keywords!</p>`;
   }
 
-  // ── Copy result button ───────────────────────────────────
   const copyBtn = document.getElementById("copy-result-btn");
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
       const summary =
         `ATS Score: ${score}/100 (${label})\n` +
-        `Matched keywords (${matched.length}): ${matched.join(", ") || "none"}\n` +
-        `Missing keywords (${missing.length}): ${missing.join(", ") || "none"}`;
+        `Matched (${matched.length}): ${matched.join(", ") || "none"}\n` +
+        `Missing (${missing.length}): ${missing.join(", ") || "none"}`;
       navigator.clipboard.writeText(summary).then(() => {
         copyBtn.textContent = "Copied ✓";
         setTimeout(() => { copyBtn.textContent = "Copy Result Summary"; }, 2000);
@@ -196,15 +166,13 @@ function renderResult(data) {
     });
   }
 
-  // ── Show results ─────────────────────────────────────────
   if (resultLoading) resultLoading.classList.add("hidden");
   resultsWrapper.classList.remove("hidden");
 }
 
-// ── Helpers ───────────────────────────────────────────────
 function showResultError(msg) {
   if (resultLoading) resultLoading.classList.add("hidden");
-  if (resultError)   {
+  if (resultError) {
     resultError.classList.remove("hidden");
     if (resultErrorMsg) resultErrorMsg.textContent = msg;
   }
@@ -213,19 +181,19 @@ function showResultError(msg) {
 function getScoreTier(score) {
   if (score >= 80) return {
     label: "Excellent Match! 🎉",
-    sub:   "Your resume is highly optimised for this role. You're a strong candidate for ATS screening."
+    sub: "Your resume is highly optimised for this role."
   };
   if (score >= 60) return {
     label: "Good Match",
-    sub:   "Your resume matches many key requirements. A few targeted improvements could push you higher."
+    sub: "Your resume matches many key requirements."
   };
   if (score >= 40) return {
     label: "Fair Match",
-    sub:   "There's potential — but the missing keywords suggest gaps worth addressing before applying."
+    sub: "There are gaps worth addressing before applying."
   };
   return {
     label: "Low Match",
-    sub:   "Your resume may not pass automated screening for this role. Consider tailoring it carefully."
+    sub: "Consider tailoring your resume carefully for this role."
   };
 }
 
@@ -240,9 +208,9 @@ function makeTag(text, cls, delay = 0) {
 function animateCount(el, from, to, duration) {
   const start = performance.now();
   function step(now) {
-    const elapsed = now - start;
+    const elapsed  = now - start;
     const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const eased    = 1 - Math.pow(1 - progress, 3);
     el.textContent = Math.round(from + (to - from) * eased);
     if (progress < 1) requestAnimationFrame(step);
   }
