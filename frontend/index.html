@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATS Resume Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Background decoration -->
+  <div class="bg-grid"></div>
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">ATS<strong>Scan</strong></span>
+      </div>
+      <p class="tagline">Know your resume's fighting chance — before the recruiter does.</p>
+    </header>
+
+    <!-- Main content -->
+    <main class="main-grid">
+
+      <!-- Left column: Upload -->
+      <section class="card card--upload" id="upload-section">
+        <div class="card-label">STEP 01</div>
+        <h2 class="card-title">Upload Resume</h2>
+        <p class="card-desc">Drop your PDF or DOCX file below. We'll extract the text automatically.</p>
+
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 4L24 32M24 4L14 14M24 4L34 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 36V40C8 41.1 8.9 42 10 42H38C39.1 42 40 41.1 40 40V36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="drop-label">Drag &amp; drop your resume here</p>
+          <p class="drop-sub">or</p>
+          <label class="btn btn--outline" for="resume-file">Browse File</label>
+          <input type="file" id="resume-file" accept=".pdf,.docx" hidden />
+          <p class="drop-formats">Supported: PDF, DOCX · Max 5MB</p>
+        </div>
+
+        <div class="file-preview hidden" id="file-preview">
+          <span class="file-icon">📄</span>
+          <span class="file-name" id="file-name-display"></span>
+          <button class="remove-file" id="remove-file" title="Remove file">✕</button>
+        </div>
+
+        <div class="upload-status hidden" id="upload-status">
+          <div class="status-bar">
+            <div class="status-fill" id="status-fill"></div>
+          </div>
+          <p class="status-text" id="status-text">Uploading…</p>
+        </div>
+
+        <div class="upload-success hidden" id="upload-success">
+          <span class="success-badge">✓ Resume parsed successfully</span>
+          <span class="resume-id-tag" id="resume-id-tag"></span>
+        </div>
+      </section>
+
+      <!-- Right column: Job Description -->
+      <section class="card card--jd" id="jd-section">
+        <div class="card-label">STEP 02</div>
+        <h2 class="card-title">Paste Job Description</h2>
+        <p class="card-desc">Copy the full job posting and paste it here for the best results.</p>
+
+        <div class="textarea-wrapper">
+          <textarea
+            id="job-description"
+            class="jd-textarea"
+            placeholder="Paste the job description here…&#10;&#10;e.g. We are looking for a Senior Python Developer with experience in Flask, REST APIs, MySQL, and cloud platforms…"
+            rows="12"
+          ></textarea>
+          <div class="char-counter"><span id="char-count">0</span> characters</div>
+        </div>
+      </section>
+
+      <!-- CTA row -->
+      <div class="cta-row">
+        <button class="btn btn--primary btn--large" id="analyze-btn" disabled>
+          <span class="btn-text">Analyze My Resume</span>
+          <span class="btn-arrow">→</span>
+        </button>
+        <p class="cta-hint" id="cta-hint">Upload a resume and paste a job description to begin.</p>
+      </div>
+
+    </main>
+
+    <!-- Error toast -->
+    <div class="toast toast--error hidden" id="error-toast">
+      <span class="toast-icon">⚠</span>
+      <span class="toast-msg" id="toast-msg">Something went wrong.</span>
+      <button class="toast-close" id="toast-close">✕</button>
+    </div>
+
+    <footer class="site-footer">
+      <p>Built with Flask + Vanilla JS · No data stored beyond your session</p>
+    </footer>
+  </div>
+
+  <script src="js/upload.js"></script>
+  <script src="js/ats_score.js"></script>
+</body>
+</html>

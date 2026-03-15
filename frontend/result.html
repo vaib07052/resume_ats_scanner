@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATS Result — ATSScan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="results-page">
+
+  <div class="bg-grid"></div>
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+
+  <div class="app-wrapper">
+
+    <header class="site-header">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">ATS<strong>Scan</strong></span>
+      </div>
+      <a href="index.html" class="btn btn--outline btn--sm">← Scan Another</a>
+    </header>
+
+    <!-- Loading state -->
+    <div class="result-loading" id="result-loading">
+      <div class="spinner"></div>
+      <p>Calculating your score…</p>
+    </div>
+
+    <!-- Results content -->
+    <main class="results-wrapper hidden" id="results-wrapper">
+
+      <!-- Score hero -->
+      <section class="score-hero">
+        <div class="score-ring-container">
+          <svg class="score-ring" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle class="ring-bg"    cx="100" cy="100" r="80" />
+            <circle class="ring-fill"  cx="100" cy="100" r="80" id="ring-fill" />
+          </svg>
+          <div class="score-center">
+            <span class="score-number" id="score-number">0</span>
+            <span class="score-label">/ 100</span>
+          </div>
+        </div>
+
+        <div class="score-meta">
+          <h1 class="score-headline" id="score-headline">Calculating…</h1>
+          <p class="score-sub" id="score-sub"></p>
+          <div class="score-pills">
+            <div class="pill pill--green">
+              <span class="pill-num" id="matched-count">0</span>
+              <span class="pill-label">Matched Keywords</span>
+            </div>
+            <div class="pill pill--red">
+              <span class="pill-num" id="missing-count">0</span>
+              <span class="pill-label">Missing Keywords</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Keywords grid -->
+      <section class="keywords-grid">
+
+        <div class="kw-card kw-card--matched">
+          <div class="kw-card-header">
+            <span class="kw-badge kw-badge--matched">✓ Matched</span>
+            <span class="kw-count" id="matched-total"></span>
+          </div>
+          <div class="kw-list" id="matched-list">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <div class="kw-card kw-card--missing">
+          <div class="kw-card-header">
+            <span class="kw-badge kw-badge--missing">✗ Missing</span>
+            <span class="kw-count" id="missing-total"></span>
+          </div>
+          <div class="kw-list" id="missing-list">
+            <!-- Injected by JS -->
+          </div>
+          <p class="kw-tip">💡 Consider adding these keywords naturally to your resume to improve your score.</p>
+        </div>
+
+      </section>
+
+      <!-- Action row -->
+      <div class="result-actions">
+        <a href="index.html" class="btn btn--primary">Scan Another Resume</a>
+        <button class="btn btn--outline" id="copy-result-btn">Copy Result Summary</button>
+      </div>
+
+    </main>
+
+    <!-- Error state -->
+    <div class="result-error hidden" id="result-error">
+      <p class="error-emoji">⚠️</p>
+      <h2>Could not load result.</h2>
+      <p id="result-error-msg">No result ID found. Please go back and run the analysis.</p>
+      <a href="index.html" class="btn btn--primary" style="margin-top:1.5rem;">Go Back</a>
+    </div>
+
+    <footer class="site-footer">
+      <p>Built with Flask + Vanilla JS · No data stored beyond your session</p>
+    </footer>
+  </div>
+
+  <script src="js/ats_score.js"></script>
+</body>
+</html>
